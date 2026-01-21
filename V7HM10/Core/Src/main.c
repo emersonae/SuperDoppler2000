@@ -168,7 +168,7 @@ int main(void)
 	  HAL_UART_Receive_DMA(&huart1, rx_buf, sizeof(rx_buf)-1);
 	  HAL_Delay(10000);
 
-	  sprintf(tx_buf,"message: ");
+	  sprintf(tx_buf,"Message: ");
 	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)tx_buf, strlen(tx_buf));
 	  HAL_Delay(1000);
 
