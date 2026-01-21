@@ -159,10 +159,22 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  AHT20_Measure(); //read temp & humidity
-	  sprintf(tx_buf,"T: %.2f, H: %.2f",Temperature,Humidity); //send T & H via UART to BT
+	  sprintf(rx_buf,"");
+	  HAL_Delay(1000);
+
+	  sprintf(tx_buf,"Receiving...",Temperature,Humidity);
 	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)tx_buf, strlen(tx_buf));
-	  HAL_Delay(5000);
+
+	  HAL_UART_Receive_DMA(&huart1, rx_buf, sizeof(rx_buf)-1);
+	  HAL_Delay(10000);
+
+	  sprintf(tx_buf,"message: ");
+	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)tx_buf, strlen(tx_buf));
+	  HAL_Delay(1000);
+
+	  sprintf(tx_buf,rx_buf);
+	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)tx_buf, strlen(tx_buf));
+	  HAL_Delay(3000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
