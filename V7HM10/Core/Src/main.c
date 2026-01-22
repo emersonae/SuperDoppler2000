@@ -54,7 +54,6 @@ UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
 
-
 /* USER CODE BEGIN PV */
 float Temperature, Humidity;
 static uint8_t rxBuf[BUF_SIZE] = {0};
@@ -120,27 +119,28 @@ void AHT20_Measure (void)
 //in this case we are only using interrupt to recive OK after an AT ?
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	HAL_UART_Transmit(&huart1, rxBuf, strlen(rxBuf), 100);
+//	HAL_UART_Transmit(&huart1, rxBuf, strlen(rxBuf), 100);
 
-	if(strncmp((char*) rxBuf, msgOK,strlen(msgOK)) == 0){
-		sprintf(btStatus,msgOK);
-		memset(rxBuf, 0, sizeof(rxBuf));
-		//done?
-	}else{
-//		memset(rx_buf, 0, sizeof(rx_buf));
-		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
-		HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
-
-	}
+//	if(strncmp((char*) rxBuf, msgOK,strlen(msgOK)) == 0){
+//		HAL_UART_Transmit(&huart1, rxBuf, strlen(rxBuf), 100);
+//		sprintf(btStatus,msgOK);
+//		memset(rxBuf, 0, sizeof(rxBuf));
+//		//done?
+//	}else{
+//		memset(rxBuf, 0, sizeof(rxBuf));
+//		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
+////		HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
+//		HAL_UART_Receive_IT(&huart1, rxBuf, 2);
+//	}
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
-	if(strncmp((char*) btStatus, msgOK, strlen(msgOK)) == 0){
+//	if(strncmp((char*) btStatus, msgOK, strlen(msgOK)) == 0){
 		AHT20_Measure(); //read temp & humidity
 		sprintf(txBuf,"T: %.2f, H: %.2f",Temperature,Humidity); //send T & H via UART to BT
 		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen(txBuf));
-	}
+//	}
 }
 
 /* USER CODE END 0 */
@@ -180,11 +180,13 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-
   AHT20_Init();
 
   HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
+//  HAL_UART_Receive_IT(&huart1, rxBuf, 2);
   HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
+
+  HAL_TIM_Base_Start_IT(&htim2);
 
   /* USER CODE END 2 */
 
@@ -215,13 +217,12 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
-  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV3;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL8;
+  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
