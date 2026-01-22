@@ -21,11 +21,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-#include "math.h"
 #include "string.h"
 #include "stdio.h"
+/* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
@@ -34,8 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define AHT20_ADDRESS 0x38<<1
-#define HI2C      hi2c1
+#define BUF_SIZE 50
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -44,19 +41,16 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-I2C_HandleTypeDef hi2c1;
-
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
-float Temperature, Humidity;
-static uint8_t rx_buf[100];
-static uint8_t tx_buf[100];
-static char* msg1 = "AT";
-
+uint8_t rxBuf[BUF_SIZE] = {0};
+uint16_t rxLenData = 0;
+//static char* msg_AT = "AT";
+//static char* msg_OK = "OK";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -65,49 +59,26 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
-static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
-void AHT20_Init (void);
-void AHT20_Measure ();
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void AHT20_Init (void)
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
-	HAL_Delay(40);
-	uint8_t status;
-	HAL_I2C_Mem_Read(&hi2c1, AHT20_ADDRESS, 0x71, 1, &status, 1, 1000);
-	if ((status>>3 & 0x01) == 0)  // if CAL = 0
-	{
-		uint8_t init_commands[3] = {0xBE, 0x08, 0x00};
-		HAL_I2C_Master_Transmit(&hi2c1, AHT20_ADDRESS, init_commands, 3, 1000);
-		HAL_Delay (10);
-	}
+	rxLenData = Size;
+    HAL_UART_Transmit(&huart1, rxBuf, rxLenData, 100);
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxBuf, BUF_SIZE);
 }
 
-void AHT20_Measure (void)
-{
-	uint8_t measure_command[3] = {0xAC, 0x33, 0x00};
-	HAL_I2C_Master_Transmit(&hi2c1, AHT20_ADDRESS, measure_command, 3, 1000);
-	HAL_Delay(80);
+//only hits this interrupt if the whole buffer is full of data!
+//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+//{
+//    HAL_UART_Transmit(&huart1, UART1_RxBuffer, UART_RX_BUFFER_SIZE, 100);
+//    HAL_UART_Receive_DMA(&huart1, UART1_RxBuffer, UART_RX_BUFFER_SIZE);
+//}
 
-	uint8_t status;
-	do {
-		HAL_I2C_Mem_Read(&hi2c1, AHT20_ADDRESS, 0x71, 1, &status, 1, 1000);
-		HAL_Delay(100);
-	}
-	while ((status>>7 & 0x01) == 1);
-
-	uint8_t RxData[7];
-	HAL_I2C_Master_Receive(&hi2c1, AHT20_ADDRESS, RxData, 7, 1000);
-	uint32_t HUM_DATA = (RxData[1]<<16)|(RxData[2]<<8)|RxData[3];  // accumulated 24bit data
-	HUM_DATA = HUM_DATA>>4;  // 20bit data
-	Humidity = (float) ((HUM_DATA/pow(2,20)) * 100);
-	uint32_t TEMP_DATA = (RxData[3]<<16)|(RxData[4]<<8)|RxData[5];  // accumulated 24bit data
-	TEMP_DATA = TEMP_DATA&0xFFFFF;  // first 20bit data
-	Temperature = (float) (((TEMP_DATA/pow(2,20)) * 200) - 50);
-}
 
 /* USER CODE END 0 */
 
@@ -143,14 +114,15 @@ int main(void)
   MX_DMA_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
-  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
-  AHT20_Init();
-//  HAL_Delay(500);
+//  HAL_UART_Receive_DMA(&huart1, rx_buf, strlen("OK")); //expecting OK response
+//  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msg_AT, strlen(msg_AT));//Send AT command
 
-  HAL_UART_Receive_DMA(&huart1, rx_buf, strlen("OK")); //expecting OK response
-  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msg1, strlen(msg1));//Send AT command
+//non circular DMA
+//  HAL_UART_Receive_DMA(&huart1, rxBuf, BUF_SZIE);
+//circular DMA
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxBuf, BUF_SIZE);
 
 
   /* USER CODE END 2 */
@@ -159,22 +131,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  sprintf(rx_buf,"");
-	  HAL_Delay(1000);
-
-	  sprintf(tx_buf,"Receiving...",Temperature,Humidity);
-	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)tx_buf, strlen(tx_buf));
-
-	  HAL_UART_Receive_DMA(&huart1, rx_buf, sizeof(rx_buf)-1);
-	  HAL_Delay(10000);
-
-	  sprintf(tx_buf,"Message: ");
-	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)tx_buf, strlen(tx_buf));
-	  HAL_Delay(1000);
-
-	  sprintf(tx_buf,rx_buf);
-	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)tx_buf, strlen(tx_buf));
-	  HAL_Delay(3000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -223,40 +179,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief I2C1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2C1_Init(void)
-{
-
-  /* USER CODE BEGIN I2C1_Init 0 */
-
-  /* USER CODE END I2C1_Init 0 */
-
-  /* USER CODE BEGIN I2C1_Init 1 */
-
-  /* USER CODE END I2C1_Init 1 */
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000;
-  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.OwnAddress2 = 0;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2C1_Init 2 */
-
-  /* USER CODE END I2C1_Init 2 */
-
 }
 
 /**
