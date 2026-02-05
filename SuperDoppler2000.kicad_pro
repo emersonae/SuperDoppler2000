@@ -617,10 +617,6 @@
     [
       "bb898da4-afb4-4a6a-bc65-e032db19907f",
       "STM32-L152RE"
-    ],
-    [
-      "6c8134c3-ab4a-4c56-a9f2-1f5ab9f5e124",
-      "Sensors and Bluetooth"
     ]
   ],
   "text_variables": {}

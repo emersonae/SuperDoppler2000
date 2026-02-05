@@ -1,0 +1,6 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "SOT_SiT1630-S_SIT")(type "KiCad")(uri "${KIPRJMOD}/SymbolLibrary/SOT_SiT1630-S_SIT.kicad_sym")(options "")(descr ""))
+  (lib (name "TPS61288RQQ")(type "KiCad")(uri "${KIPRJMOD}/SymbolLibrary/TPS61288RQQ.kicad_sym")(options "")(descr ""))
+  (lib (name "TPSM863253RDXR")(type "KiCad")(uri "${KIPRJMOD}/SymbolLibrary/TPSM863253RDXR.kicad_sym")(options "")(descr ""))
+)
