@@ -1765,16 +1765,16 @@
 			(embedded_fonts no)
 		)
 	)
-	(text "+3.3V?"
+	(text "DIODE??"
 		(exclude_from_sim no)
-		(at 171.958 35.56 0)
+		(at 171.704 98.552 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 				(color 255 0 255 1)
 			)
 		)
-		(uuid "2cae9880-dc5a-4e81-aee6-cba00a14cb03")
+		(uuid "28c50f32-3a3c-41e2-abed-404272cefe92")
 	)
 	(text "BOOST CONVERTER 4.5 V - 12V"
 		(exclude_from_sim no)
@@ -1796,9 +1796,20 @@
 		)
 		(uuid "48bc2aa3-d807-4718-9b28-859cd6339b6b")
 	)
-	(text "from 4.5? V battery"
+	(text "voltage reg??"
 		(exclude_from_sim no)
-		(at 22.86 104.648 0)
+		(at 28.956 59.69 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(color 255 0 255 1)
+			)
+		)
+		(uuid "84bbe54e-f305-4c58-a3d3-1fc312ba956d")
+	)
+	(text "4.5V from battery\nOR USB??"
+		(exclude_from_sim no)
+		(at 22.86 109.474 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1806,6 +1817,17 @@
 			)
 		)
 		(uuid "acb9352a-7363-464d-afe9-ff2769b3d3d7")
+	)
+	(text "DIODE??"
+		(exclude_from_sim no)
+		(at 149.606 36.83 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(color 255 0 255 1)
+			)
+		)
+		(uuid "b5da8ae7-26c1-4884-8e0c-32643cf35bc9")
 	)
 	(junction
 		(at 66.04 147.32)
@@ -1830,6 +1852,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "121f2647-f31d-4fc8-a315-c9b16e5ba08c")
+	)
+	(junction
+		(at 158.75 34.29)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "1986c38d-c8be-466e-ab26-320c2a24e7e9")
 	)
 	(junction
 		(at 44.45 147.32)
@@ -2048,6 +2076,16 @@
 			(type default)
 		)
 		(uuid "0408e278-fd93-49aa-9197-04b95306250b")
+	)
+	(wire
+		(pts
+			(xy 158.75 34.29) (xy 158.75 36.83)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "05c4b10e-04a4-4bdb-9c4a-64e30ac478e3")
 	)
 	(wire
 		(pts
@@ -3176,6 +3214,73 @@
 		)
 	)
 	(symbol
+		(lib_id "power:PWR_FLAG")
+		(at 158.75 34.29 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "408c1ac0-b714-43fb-b541-760a6c447266")
+		(property "Reference" "#FLG01"
+			(at 156.845 34.29 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "PWR_FLAG"
+			(at 154.94 34.2899 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 158.75 34.29 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 158.75 34.29 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Special symbol for telling ERC where power comes from"
+			(at 158.75 34.29 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "06e4e874-f0f0-4b83-96fd-a975881715c7")
+		)
+		(instances
+			(project "SuperDoppler2000"
+				(path "/1cfe4a09-7a70-413b-8af3-1a4c6e9327a7"
+					(reference "#FLG01")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:R_US")
 		(at 86.36 63.5 0)
 		(unit 1)
@@ -3264,7 +3369,7 @@
 				(hide yes)
 			)
 		)
-		(property "Value" "+4.5V"
+		(property "Value" "+4.5_or_+5"
 			(at 30.48 86.36 0)
 			(effects
 				(font
@@ -4773,7 +4878,7 @@
 	)
 	(symbol
 		(lib_id "power:+3.3V")
-		(at 158.75 36.83 0)
+		(at 158.75 34.29 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -4782,7 +4887,7 @@
 		(fields_autoplaced yes)
 		(uuid "fc36bacb-6dc0-4149-ac33-3b08f026c7aa")
 		(property "Reference" "#PWR025"
-			(at 158.75 40.64 0)
+			(at 158.75 38.1 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4791,7 +4896,7 @@
 			)
 		)
 		(property "Value" "+3.3V"
-			(at 158.75 31.75 0)
+			(at 158.75 29.21 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4799,7 +4904,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 158.75 36.83 0)
+			(at 158.75 34.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4808,7 +4913,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 158.75 36.83 0)
+			(at 158.75 34.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4817,7 +4922,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
-			(at 158.75 36.83 0)
+			(at 158.75 34.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
