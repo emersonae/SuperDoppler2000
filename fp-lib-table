@@ -1,5 +1,0 @@
-(fp_lib_table
-  (version 7)
-  (lib (name "FootprintLibrary")(type "KiCad")(uri "${KIPRJMOD}/FootprintLibrary")(options "")(descr ""))
-  (lib (name "graphics")(type "KiCad")(uri "${KIPRJMOD}/graphics")(options "")(descr ""))
-)
