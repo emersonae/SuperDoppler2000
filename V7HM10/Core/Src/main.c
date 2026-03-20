@@ -121,6 +121,34 @@ void AHT20_Measure (void)
 	Temperature = (float) (((TEMP_DATA/pow(2,20)) * 200) - 50);
 }
 
+//in this case we are only using interrupt to recive OK after an AT ?
+//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+//{
+//	HAL_UART_Transmit(&huart1, rxBuf, strlen(rxBuf), 100);
+//
+//	if(strncmp((char*) rxBuf, msgOK, strlen(msgOK)) == 0){
+//		HAL_UART_Transmit(&huart1, rxBuf, strlen(rxBuf), 100);
+//		sprintf(btStatus,msgOK);
+//		memset(rxBuf, 0, sizeof(rxBuf));
+//		//done?
+//	}else{
+//		memset(rxBuf, 0, sizeof(rxBuf));
+//		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
+////		HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
+//		HAL_UART_Receive_IT(&huart1, rxBuf, 2);
+//	}
+//}
+
+//void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
+//{
+//	if(strncmp((char*) btStatus, msgOK, strlen(msgOK)) == 0){
+//		AHT20_Measure(); //read temp & humidity
+//		sprintf(txBuf,"T: %.2f, H: %.2f",Temperature,Humidity); //send T & H via UART to BT
+//		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen(txBuf));
+//		HAL_Delay(5000);
+//	}
+//}
+
 /* USER CODE END 0 */
 
 /**
@@ -163,7 +191,10 @@ int main(void)
   AHT20_Init();
 
   HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
+//  HAL_UART_Receive_IT(&huart1, rxBuf, 2);
   HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
+
+//  HAL_TIM_Base_Start_IT(&htim2);
 
   /* USER CODE END 2 */
 
