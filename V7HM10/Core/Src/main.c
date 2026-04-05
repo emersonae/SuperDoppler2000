@@ -66,6 +66,9 @@ static char* msgAT = "AT";
 static char* msgOK = "OK";
 
 
+//for Sleep Mode code
+char *str = {0};
+uint8_t Rx_data;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -121,32 +124,20 @@ void AHT20_Measure (void)
 	Temperature = (float) (((TEMP_DATA/pow(2,20)) * 200) - 50);
 }
 
-//in this case we are only using interrupt to recive OK after an AT ?
-//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-//{
-//	HAL_UART_Transmit(&huart1, rxBuf, strlen(rxBuf), 100);
-//
-//	if(strncmp((char*) rxBuf, msgOK, strlen(msgOK)) == 0){
-//		HAL_UART_Transmit(&huart1, rxBuf, strlen(rxBuf), 100);
-//		sprintf(btStatus,msgOK);
-//		memset(rxBuf, 0, sizeof(rxBuf));
-//		//done?
-//	}else{
-//		memset(rxBuf, 0, sizeof(rxBuf));
-//		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
-////		HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
-//		HAL_UART_Receive_IT(&huart1, rxBuf, 2);
-//	}
-//}
+// SleepOnExit will be applicable when the MCU is wake up by UART
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    HAL_UART_Receive_IT(huart, &Rx_data, 1);
+    str = "WakeUP from SLEEP by UART\r\n";
+    HAL_UART_Transmit(huart, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+}
 
-//void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
+//wakeup when interrupt triggered
+//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 //{
-//	if(strncmp((char*) btStatus, msgOK, strlen(msgOK)) == 0){
-//		AHT20_Measure(); //read temp & humidity
-//		sprintf(txBuf,"T: %.2f, H: %.2f",Temperature,Humidity); //send T & H via UART to BT
-//		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen(txBuf));
-//		HAL_Delay(5000);
-//	}
+//    str = "WakeUP from SLEEP by EXTI\r\n";
+//    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+//    HAL_PWR_DisableSleepOnExit ();
 //}
 
 /* USER CODE END 0 */
@@ -190,9 +181,11 @@ int main(void)
   /* USER CODE BEGIN 2 */
   AHT20_Init();
 
-  HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
-//  HAL_UART_Receive_IT(&huart1, rxBuf, 2);
-  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
+//  HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
+//  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
+
+
+//  HAL_UART_Receive_IT(&huart2, &Rx_data, 1);
 
 //  HAL_TIM_Base_Start_IT(&htim2);
 
@@ -202,13 +195,40 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  AHT20_Measure(); //read temp & humidity
-	  sprintf(txBuf,"T: %.2f, H: %.2f",Temperature,Humidity); //send T & H via UART to BT
-	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen(txBuf));
-	  HAL_Delay(5000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  str = "Going into SLEEP MODE in 5 seconds\r\n";
+	  HAL_UART_Transmit(&huart1, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+	  HAL_Delay(5000);
+
+	  	/*    Suspend Tick increment to prevent wakeup by Systick interrupt.
+	  		  Otherwise the Systick interrupt will wake up the device within 1ms (HAL time base)
+	  	*/
+	  HAL_SuspendTick();
+
+	  //LED for status
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+
+	  //Enter Sleep Mode , wake up is done once User push-button is pressed
+	  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+
+	  //Resume Tick interrupt if disabled prior to sleep mode entry
+	  HAL_ResumeTick();
+
+
+	  str = "WakeUP from SLEEP\r\n";
+	  HAL_UART_Transmit(&huart1, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+
+	  for (int i=0; i<20; i++)
+	  {
+		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		  HAL_Delay(150);
+	  }
+
+
   }
   /* USER CODE END 3 */
 }
@@ -536,6 +556,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LD2_Pin */
   GPIO_InitStruct.Pin = LD2_Pin;
