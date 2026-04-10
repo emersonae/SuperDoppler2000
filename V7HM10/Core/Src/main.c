@@ -127,18 +127,26 @@ void AHT20_Measure (void)
 // SleepOnExit will be applicable when the MCU is wake up by UART
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    HAL_UART_Receive_IT(huart, &Rx_data, 1);
+    HAL_UART_Receive_IT(&huart1, &Rx_data, 1);
     str = "WakeUP from SLEEP by UART\r\n";
-    HAL_UART_Transmit(huart, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+//    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+    sprintf(txBuf,str);
+	HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen(txBuf));
+
+	HAL_PWR_DisableSleepOnExit ();
 }
 
-//wakeup when interrupt triggered
-//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-//{
-//    str = "WakeUP from SLEEP by EXTI\r\n";
+// SleepOnExit will be disabled when the MCU is wake up by EXTI
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    str = "WakeUP from SLEEP by EXTI\r\n";
 //    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
-//    HAL_PWR_DisableSleepOnExit ();
-//}
+    sprintf(txBuf,str);
+    HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen(txBuf));
+//    HAL_ResumeTick();
+    HAL_PWR_DisableSleepOnExit ();
+}
+
 
 /* USER CODE END 0 */
 
@@ -179,15 +187,15 @@ int main(void)
   MX_I2C2_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  AHT20_Init();
+//  AHT20_Init();
 
-//  HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
-//  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
-
+  HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
+  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
 
 //  HAL_UART_Receive_IT(&huart2, &Rx_data, 1);
 
 //  HAL_TIM_Base_Start_IT(&htim2);
+
 
   /* USER CODE END 2 */
 
@@ -198,10 +206,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  str = "Going into SLEEP MODE in 5 seconds\r\n";
-	  HAL_UART_Transmit(&huart1, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
 
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+
+
+	  str = "Going into SLEEP MODE in 5 seconds\r\n";
+//	  HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+	  sprintf(txBuf,str);
+	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen(txBuf));
+
+
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
 	  HAL_Delay(5000);
 
 	  	/*    Suspend Tick increment to prevent wakeup by Systick interrupt.
@@ -210,21 +224,27 @@ int main(void)
 	  HAL_SuspendTick();
 
 	  //LED for status
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);
+
+	  HAL_PWR_EnableSleepOnExit ();
 
 	  //Enter Sleep Mode , wake up is done once User push-button is pressed
 	  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+
+
 
 	  //Resume Tick interrupt if disabled prior to sleep mode entry
 	  HAL_ResumeTick();
 
 
 	  str = "WakeUP from SLEEP\r\n";
-	  HAL_UART_Transmit(&huart1, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+//	  HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen (str), HAL_MAX_DELAY);
+	  sprintf(txBuf,str);
+	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen(txBuf));
 
 	  for (int i=0; i<20; i++)
 	  {
-		  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 		  HAL_Delay(150);
 	  }
 
