@@ -25,6 +25,7 @@
 #include "stdio.h"
 #include "math.h"
 #include <stdbool.h>
+#include "BME280.h"
 
 /* USER CODE END Includes */
 
@@ -58,7 +59,7 @@ DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
-float Temp, Hum, Pressure, Wind_dir, Wind_spd;
+float Temp, Hum, Pres;
 static uint8_t rxBuf[BUF_SIZE] = {0};
 static uint8_t txBuf[BUF_SIZE] = {0};
 static char* msgAT = "AT";
@@ -95,9 +96,6 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	uint16_t Wind_dir_raw, Wind_spd_raw;
-//	uint16_t Wind_dir_raw;
-//	char msg[10];
 
   /* USER CODE END 1 */
 
@@ -127,6 +125,10 @@ int main(void)
   MX_I2C2_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
+  if (BME280_Config(OSRS_2, OSRS_16, OSRS_1, MODE_NORMAL, T_SB_0p5, IIR_16) != 0)
+  {
+	  Error_Handler();
+  }
 
   HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
   HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
@@ -154,15 +156,26 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_ADC_Start(&hadc);
-	  HAL_ADC_PollForConversion(&hadc, HAL_MAX_DELAY);
-
-	  Wind_dir_raw = HAL_ADC_GetValue(&hadc);
-
-	  sprintf((char*)txBuf, "wind raw: %hu",Wind_dir_raw);
+	  BME280_Measure(&Temp, &Pres, &Hum);
+	  sprintf((char*)txBuf, "T: %.2f,H: %.2f,P: %.2f,",Temp, Hum, Pres);
 	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen((char*)txBuf));
 
-	  HAL_Delay(1000);
+//	  HAL_Delay(3000);
+
+//	  	      Start 5 second timer
+	  	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0); // LED OFF during sleep
+	  	  __HAL_TIM_SET_COUNTER(&htim2, 0);
+	  	  __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
+	  	  HAL_TIM_Base_Start_IT(&htim2);
+
+	  	  HAL_SuspendTick();
+	  	  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+	  	  //wakeup here
+	  	  HAL_ResumeTick();
+	  	  HAL_TIM_Base_Stop_IT(&htim2);
+	  	  HAL_Delay(100);
+	  	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
+	  	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
 
     /* USER CODE END WHILE */
 
