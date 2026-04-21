@@ -66,7 +66,6 @@ static char* msgOK = "OK";
 volatile bool sample_ready = true;
 volatile bool uart_tx_done = true;
 
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
