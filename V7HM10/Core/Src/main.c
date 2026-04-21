@@ -25,7 +25,6 @@
 #include "stdio.h"
 #include "math.h"
 #include <stdbool.h>
-#include "AHT20.h"
 
 /* USER CODE END Includes */
 
@@ -46,6 +45,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc;
+DMA_HandleTypeDef hdma_adc;
 
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
@@ -58,7 +58,7 @@ DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
-float Temp, Hum;
+float Temp, Hum, Pressure, Wind_dir, Wind_spd;
 static uint8_t rxBuf[BUF_SIZE] = {0};
 static uint8_t txBuf[BUF_SIZE] = {0};
 static char* msgAT = "AT";
@@ -95,6 +95,9 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+	uint16_t Wind_dir_raw, Wind_spd_raw;
+//	uint16_t Wind_dir_raw;
+//	char msg[10];
 
   /* USER CODE END 1 */
 
@@ -124,7 +127,6 @@ int main(void)
   MX_I2C2_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  AHT20_Init(&hi2c1);
 
   HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
   HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
@@ -145,32 +147,21 @@ int main(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
 
 
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
-	  AHT20_Measure(&hi2c1,&Temp, &Hum);
-	  sprintf((char*)txBuf, "T: %.2f, H: %.2f\r\n", Temp, Hum);
+	  HAL_ADC_Start(&hadc);
+	  HAL_ADC_PollForConversion(&hadc, HAL_MAX_DELAY);
+
+	  Wind_dir_raw = HAL_ADC_GetValue(&hadc);
+
+	  sprintf((char*)txBuf, "wind raw: %hu",Wind_dir_raw);
 	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen((char*)txBuf));
 
-	  HAL_Delay(3000); //for visuals
-
-//	      Start 5 second timer
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0); // LED OFF during sleep
-	  __HAL_TIM_SET_COUNTER(&htim2, 0);
-	  __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
-	  HAL_TIM_Base_Start_IT(&htim2);
-
-	  HAL_SuspendTick();
-	  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
-	  //wakeup here
-	  HAL_ResumeTick();
-	  HAL_TIM_Base_Stop_IT(&htim2);
-	  HAL_Delay(100);
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
+	  HAL_Delay(1000);
 
     /* USER CODE END WHILE */
 
@@ -467,6 +458,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
   /* DMA1_Channel4_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
