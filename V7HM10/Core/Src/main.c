@@ -25,6 +25,8 @@
 #include "stdio.h"
 #include "math.h"
 #include <stdbool.h>
+#include "AHT20.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -34,8 +36,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define AHT20_ADDRESS 0x38<<1
-#define HI2C      hi2c1
 #define BUF_SIZE 50
 /* USER CODE END PD */
 
@@ -58,12 +58,13 @@ DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
-float Temperature, Humidity;
+float Temp, Hum;
 static uint8_t rxBuf[BUF_SIZE] = {0};
 static uint8_t txBuf[BUF_SIZE] = {0};
-static uint8_t btStatus[2] = {0};
 static char* msgAT = "AT";
 static char* msgOK = "OK";
+volatile bool sample_ready = true;
+volatile bool uart_tx_done = true;
 
 
 /* USER CODE END PV */
@@ -79,47 +80,11 @@ static void MX_ADC_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
-void AHT20_Init (void);
-void AHT20_Measure ();
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void AHT20_Init (void)
-{
-	HAL_Delay(40);
-	uint8_t status;
-	HAL_I2C_Mem_Read(&hi2c1, AHT20_ADDRESS, 0x71, 1, &status, 1, 1000);
-	if ((status>>3 & 0x01) == 0)  // if CAL = 0
-	{
-		uint8_t init_commands[3] = {0xBE, 0x08, 0x00};
-		HAL_I2C_Master_Transmit(&hi2c1, AHT20_ADDRESS, init_commands, 3, 1000);
-		HAL_Delay (10);
-	}
-}
-
-void AHT20_Measure (void)
-{
-	uint8_t measure_command[3] = {0xAC, 0x33, 0x00};
-	HAL_I2C_Master_Transmit(&hi2c1, AHT20_ADDRESS, measure_command, 3, 1000);
-	HAL_Delay(80);
-
-	uint8_t status;
-	do {
-		HAL_I2C_Mem_Read(&hi2c1, AHT20_ADDRESS, 0x71, 1, &status, 1, 1000);
-		HAL_Delay(100);
-	}
-	while ((status>>7 & 0x01) == 1);
-
-	uint8_t RxData[7];
-	HAL_I2C_Master_Receive(&hi2c1, AHT20_ADDRESS, RxData, 7, 1000);
-	uint32_t HUM_DATA = (RxData[1]<<16)|(RxData[2]<<8)|RxData[3];  // accumulated 24bit data
-	HUM_DATA = HUM_DATA>>4;  // 20bit data
-	Humidity = (float) ((HUM_DATA/pow(2,20)) * 100);
-	uint32_t TEMP_DATA = (RxData[3]<<16)|(RxData[4]<<8)|RxData[5];  // accumulated 24bit data
-	TEMP_DATA = TEMP_DATA&0xFFFFF;  // first 20bit data
-	Temperature = (float) (((TEMP_DATA/pow(2,20)) * 200) - 50);
-}
 
 /* USER CODE END 0 */
 
@@ -160,10 +125,26 @@ int main(void)
   MX_I2C2_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  AHT20_Init();
+  AHT20_Init(&hi2c1);
 
   HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
   HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
+
+//led flash
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
+  HAL_Delay(300);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
+  HAL_Delay(300);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
+  HAL_Delay(300);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
+  HAL_Delay(300);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
+
 
   /* USER CODE END 2 */
 
@@ -171,10 +152,27 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  AHT20_Measure(); //read temp & humidity
-	  sprintf(txBuf,"T: %.2f, H: %.2f",Temperature,Humidity); //send T & H via UART to BT
-	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen(txBuf));
-	  HAL_Delay(5000);
+	  AHT20_Measure(&hi2c1,&Temp, &Hum);
+	  sprintf((char*)txBuf, "T: %.2f, H: %.2f\r\n", Temp, Hum);
+	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen((char*)txBuf));
+
+	  HAL_Delay(3000); //for visuals
+
+//	      Start 5 second timer
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0); // LED OFF during sleep
+	  __HAL_TIM_SET_COUNTER(&htim2, 0);
+	  __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
+	  HAL_TIM_Base_Start_IT(&htim2);
+
+	  HAL_SuspendTick();
+	  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+	  //wakeup here
+	  HAL_ResumeTick();
+	  HAL_TIM_Base_Stop_IT(&htim2);
+	  HAL_Delay(100);
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -368,9 +366,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 511;
+  htim2.Init.Prescaler = 3199;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 62499;
+  htim2.Init.Period = 49999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -498,20 +496,14 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
+  /*Configure GPIO pins : PC7 PC8 PC9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -519,6 +511,23 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance == TIM2)
+    {
+    	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
+    }
+
+}
+
+//void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+//{
+//    if (huart->Instance == USART1)
+//    {
+//        uart_tx_done = true;
+//
+//    }
+//}
 
 /* USER CODE END 4 */
 
