@@ -152,25 +152,34 @@ int main(void)
   while (1)
   {
 	  AHT20_Measure(&hi2c1,&Temp, &Hum);
-	  sprintf((char*)txBuf, "T: %.2f, H: %.2f\r\n", Temp, Hum);
+//	  sprintf((char*)txBuf, "T: %.2f, H: %.2f\r\n", Temp, Hum);
+//	  char test[6];
+//	  strcpy(test, "HELLO");
+//	  txBuf[1] = '\0';
+//	  for (int i = 0; i < 6; i++) {
+//		  txBuf[0] = test[i];
+//		  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen((char*)txBuf));
+//		  HAL_Delay(1);
+//	  }
+      strcpy(txBuf, "HELLO");
 	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen((char*)txBuf));
 
 	  HAL_Delay(3000); //for visuals
 
 //	      Start 5 second timer
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0); // LED OFF during sleep
-	  __HAL_TIM_SET_COUNTER(&htim2, 0);
-	  __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
-	  HAL_TIM_Base_Start_IT(&htim2);
-
-	  HAL_SuspendTick();
-	  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
-	  //wakeup here
-	  HAL_ResumeTick();
-	  HAL_TIM_Base_Stop_IT(&htim2);
-	  HAL_Delay(100);
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
+//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0); // LED OFF during sleep
+//	  __HAL_TIM_SET_COUNTER(&htim2, 0);
+//	  __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
+//	  HAL_TIM_Base_Start_IT(&htim2);
+//
+//	  HAL_SuspendTick();
+//	  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+//	  //wakeup here
+//	  HAL_ResumeTick();
+//	  HAL_TIM_Base_Stop_IT(&htim2);
+//	  HAL_Delay(100);
+//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
+//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
 
     /* USER CODE END WHILE */
 
@@ -195,13 +204,12 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL8;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL4;
   RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
