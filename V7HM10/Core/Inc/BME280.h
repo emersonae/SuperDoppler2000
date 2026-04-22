@@ -33,7 +33,7 @@
 
 #include "main.h"
 
-#define BME280_I2C hi2c1
+#define BME280_I2C hi2c2
 
 #define SUPPORT_64BIT 1
 //#define SUPPORT_32BIT 1
