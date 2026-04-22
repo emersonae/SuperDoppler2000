@@ -124,24 +124,24 @@ int main(void)
   MX_I2C2_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  AHT20_Init(&hi2c1);
+  AHT20_Init(&hi2c2);
 
   HAL_UART_Receive_DMA(&huart1, rxBuf, strlen(msgOK)); //expecting 2 char response (OK)
   HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
 
 //led flash
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
-  HAL_Delay(300);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
-  HAL_Delay(300);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
-  HAL_Delay(300);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
-  HAL_Delay(300);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
+//  HAL_Delay(300);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
+//  HAL_Delay(300);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
+//  HAL_Delay(300);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
+//  HAL_Delay(300);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
 
 
@@ -151,35 +151,28 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  AHT20_Measure(&hi2c1,&Temp, &Hum);
-//	  sprintf((char*)txBuf, "T: %.2f, H: %.2f\r\n", Temp, Hum);
-//	  char test[6];
-//	  strcpy(test, "HELLO");
-//	  txBuf[1] = '\0';
-//	  for (int i = 0; i < 6; i++) {
-//		  txBuf[0] = test[i];
-//		  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen((char*)txBuf));
-//		  HAL_Delay(1);
-//	  }
-      strcpy(txBuf, "HELLO");
+	  AHT20_Measure(&hi2c2,&Temp, &Hum);
+	  sprintf((char*)txBuf, "T: %.2f, H: %.2f\r\n", Temp, Hum);
+
+//      strcpy(txBuf, "HELLO");
 	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen((char*)txBuf));
 
-	  HAL_Delay(3000); //for visuals
+	  HAL_Delay(1000); //for visuals
 
 //	      Start 5 second timer
-//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0); // LED OFF during sleep
-//	  __HAL_TIM_SET_COUNTER(&htim2, 0);
-//	  __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
-//	  HAL_TIM_Base_Start_IT(&htim2);
-//
-//	  HAL_SuspendTick();
-//	  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
-//	  //wakeup here
-//	  HAL_ResumeTick();
-//	  HAL_TIM_Base_Stop_IT(&htim2);
-//	  HAL_Delay(100);
-//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
-//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0); // LED OFF during sleep
+	  __HAL_TIM_SET_COUNTER(&htim2, 0);
+	  __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
+	  HAL_TIM_Base_Start_IT(&htim2);
+
+	  HAL_SuspendTick();
+	  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+	  //wakeup here
+	  HAL_ResumeTick();
+	  HAL_TIM_Base_Stop_IT(&htim2);
+	  HAL_Delay(100);
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
 
     /* USER CODE END WHILE */
 
