@@ -134,18 +134,18 @@ int main(void)
   HAL_UART_Transmit_DMA(&huart1, (uint8_t*)msgAT, strlen(msgAT));//Send AT command
 
 //led flash
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
-  HAL_Delay(300);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
-  HAL_Delay(300);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
-  HAL_Delay(300);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
-  HAL_Delay(300);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
+//  HAL_Delay(300);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
+//  HAL_Delay(300);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 1);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
+//  HAL_Delay(300);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
+//  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
+//  HAL_Delay(300);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);
 
 
@@ -160,7 +160,7 @@ int main(void)
 	  sprintf((char*)txBuf, "T: %.2f,H: %.2f,P: %.2f,",Temp, Hum, Pres);
 	  HAL_UART_Transmit_DMA(&huart1, (uint8_t*)txBuf, strlen((char*)txBuf));
 
-//	  HAL_Delay(3000);
+	  HAL_Delay(1000);
 
 //	  	      Start 5 second timer
 	  	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0); // LED OFF during sleep
